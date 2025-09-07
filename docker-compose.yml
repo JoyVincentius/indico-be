@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  db:
+    platform: linux/x86_64
+    image: mysql:5.7
+    container_name: indico-mysql
+    environment:
+      - MYSQL_DATABASE=root
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+      - MYSQL_ROOT_PASSWORD=root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql:rw,Z
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql_data:
+    driver: local
