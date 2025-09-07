@@ -1,0 +1,151 @@
+{
+	"info": {
+		"_postman_id": "fbbb3b38-251e-4100-b2a7-f29ad508927d",
+		"name": "indico",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "get order",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/orders/1",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"orders",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create order",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"product_id\": 1,\n    \"quantity\": 1000,\n    \"buyer_id\": \"user-123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/orders",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"orders"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create jobs",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"from\": \"2025-06-01\",\n    \"to\": \"2025-06-30\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/jobs/settlement",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"jobs",
+						"settlement"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get jobs",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/jobs/1eec3cfd-eb16-4572-a96a-844bf5828d6d",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"jobs",
+						"1eec3cfd-eb16-4572-a96a-844bf5828d6d"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "cancel jobs",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/jobs/24bb296c-92da-4c4b-b98a-0944c2d8317c/cancel",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"jobs",
+						"24bb296c-92da-4c4b-b98a-0944c2d8317c",
+						"cancel"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "download csv",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/jobs/downloads/1eec3cfd-eb16-4572-a96a-844bf5828d6d.csv",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"jobs",
+						"downloads",
+						"1eec3cfd-eb16-4572-a96a-844bf5828d6d.csv"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

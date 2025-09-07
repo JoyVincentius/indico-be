@@ -12,7 +12,6 @@ import (
 
 type Order struct {
 	models.Order
-	// embed for GORM table name handling
 }
 
 type OrderRepository interface {
@@ -29,12 +28,10 @@ func NewOrderRepo(db *gorm.DB) OrderRepository {
 	return &orderRepo{db: db}
 }
 
-// Create a new order row.
 func (r *orderRepo) Create(ctx context.Context, o *models.Order) error {
 	return r.db.WithContext(ctx).Create(o).Error
 }
 
-// Get order by primary key.
 func (r *orderRepo) GetByID(ctx context.Context, id uint64) (*models.Order, error) {
 	var o models.Order
 	if err := r.db.WithContext(ctx).First(&o, id).Error; err != nil {
@@ -43,7 +40,6 @@ func (r *orderRepo) GetByID(ctx context.Context, id uint64) (*models.Order, erro
 	return &o, nil
 }
 
-// ReduceStock uses SELECT … FOR UPDATE to guarantee atomicity.
 func (r *orderRepo) ReduceStock(ctx context.Context, productID uint64, qty int) error {
 	tx := r.db.Begin()
 	defer func() {
@@ -56,7 +52,6 @@ func (r *orderRepo) ReduceStock(ctx context.Context, productID uint64, qty int) 
 		Qty int `gorm:"column:stock"`
 	}
 
-	// SELECT ... FOR UPDATE
 	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 		Table("products").
 		Where("id = ?", productID).
@@ -70,7 +65,6 @@ func (r *orderRepo) ReduceStock(ctx context.Context, productID uint64, qty int) 
 		return errors.New("OUT_OF_STOCK")
 	}
 
-	// UPDATE stock = stock - qty
 	if err := tx.Table("products").
 		Where("id = ?", productID).
 		UpdateColumn("stock", gorm.Expr("stock - ?", qty)).Error; err != nil {

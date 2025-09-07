@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -15,11 +18,10 @@ type SettlementService struct {
 	txRepo    repository.TransactionRepository
 	setRepo   repository.SettlementRepository
 	JobRepo   repository.JobRepository
-	mu        sync.Mutex // protects updates to the same job record
+	mu        sync.Mutex
 	batchSize int
 }
 
-// NewSettlementService injects required repos.
 func NewSettlementService(tx repository.TransactionRepository,
 	set repository.SettlementRepository,
 	job repository.JobRepository) *SettlementService {
@@ -32,7 +34,6 @@ func NewSettlementService(tx repository.TransactionRepository,
 	}
 }
 
-// RunJob is called by a worker for a specific job ID.
 func (s *SettlementService) RunJob(ctx context.Context, jobID, fromStr, toStr string) error {
 	from, err := time.Parse("2006-01-02", fromStr)
 	if err != nil {
@@ -51,6 +52,8 @@ func (s *SettlementService) RunJob(ctx context.Context, jobID, fromStr, toStr st
 		return fmt.Errorf("failed updating total: %w", err)
 	}
 
+	var allSettlements []*models.Settlement
+
 	var offset int64 = 0
 	for {
 		batch, err := s.txRepo.GetBatch(context.Background(), from, to, int(offset), s.batchSize)
@@ -61,18 +64,17 @@ func (s *SettlementService) RunJob(ctx context.Context, jobID, fromStr, toStr st
 			break
 		}
 
-		// Insert/update ke tabel settlement
 		settlements := make([]*models.Settlement, 0, len(batch))
 		for _, tx := range batch {
 			settlements = append(settlements, &models.Settlement{
-				MerchantID:  tx.MerchantID,            
-				Date:        tx.PaidAt,                
-				GrossCents:  int64(tx.FeeCents * 100), 
-				FeeCents:    int64(tx.FeeCents),       
+				MerchantID:  tx.MerchantID,
+				Date:        tx.PaidAt,
+				GrossCents:  int64(tx.FeeCents * 100),
+				FeeCents:    int64(tx.FeeCents),
 				NetCents:    int64((tx.AmountCents - tx.FeeCents) * 100),
 				TxnCount:    1,
 				GeneratedAt: time.Now(),
-				RunID:       jobID, 
+				RunID:       jobID,
 			})
 		}
 
@@ -82,9 +84,9 @@ func (s *SettlementService) RunJob(ctx context.Context, jobID, fromStr, toStr st
 			}
 		}
 
-		processedBatch := int64(len(batch))
+		allSettlements = append(allSettlements, settlements...)
 
-		// Update job progress & processed count
+		processedBatch := int64(len(batch))
 		if err := s.JobRepo.IncrementProcessed(
 			context.Background(),
 			jobID,
@@ -99,5 +101,55 @@ func (s *SettlementService) RunJob(ctx context.Context, jobID, fromStr, toStr st
 		offset += processedBatch
 	}
 
+	if err := s.generateCSV(ctx, jobID, allSettlements); err != nil {
+		return fmt.Errorf("failed generating CSV: %w", err)
+	}
+
+	if err := s.JobRepo.UpdateStatus(ctx, jobID, "FINISHED"); err != nil {
+		return fmt.Errorf("failed updating job status to FINISHED: %w", err)
+	}
+
+	log.Printf("[Job %s] COMPLETED successfully: %d settlements written to CSV", jobID, len(allSettlements))
+	return nil
+}
+
+func (s *SettlementService) generateCSV(ctx context.Context, jobID string, settlements []*models.Settlement) error {
+	filePath := filepath.Join("public/downloads", jobID+".csv")
+
+	if err := os.MkdirAll("public/downloads", os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create public/downloads directory: %w", err)
+	}
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create CSV file: %w", err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	headers := []string{"merchant_id", "date", "gross_cents", "fee_cents", "net_cents", "txn_count", "generated_at", "run_id"}
+	if err := writer.Write(headers); err != nil {
+		return fmt.Errorf("failed to write CSV header: %w", err)
+	}
+
+	for _, s := range settlements {
+		row := []string{
+			fmt.Sprintf("%d", s.MerchantID),
+			s.Date.Format("2006-01-02"),
+			fmt.Sprintf("%d", s.GrossCents),
+			fmt.Sprintf("%d", s.FeeCents),
+			fmt.Sprintf("%d", s.NetCents),
+			fmt.Sprintf("%d", s.TxnCount),
+			s.GeneratedAt.Format(time.RFC3339),
+			s.RunID,
+		}
+		if err := writer.Write(row); err != nil {
+			return fmt.Errorf("failed to write CSV row: %w", err)
+		}
+	}
+
+	log.Printf("CSV file generated: %s (%d records)", filePath, len(settlements))
 	return nil
 }

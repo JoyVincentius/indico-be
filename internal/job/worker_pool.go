@@ -2,7 +2,6 @@ package job
 
 import "indico-be/internal/service"
 
-// WorkerPool simply carries configuration.
 type WorkerPool struct {
 	Count   int
 	Service *service.SettlementService

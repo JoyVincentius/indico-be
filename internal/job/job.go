@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// Job represents a settlement request.
 type Job struct {
 	ID        string
 	From, To  time.Time

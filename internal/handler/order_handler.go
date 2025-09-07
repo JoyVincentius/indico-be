@@ -16,7 +16,6 @@ type orderRequest struct {
 	BuyerID   string `json:"buyer_id" binding:"required"`
 }
 
-// RegisterOrderRoutes attaches order endpoints to the router.
 func RegisterOrderRoutes(r *gin.Engine, svc *service.OrderService) {
 	orders := r.Group("/orders")
 	{

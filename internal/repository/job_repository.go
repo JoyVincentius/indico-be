@@ -9,8 +9,8 @@ import (
 
 type JobRecord struct {
 	ID         string     `gorm:"primaryKey" json:"job_id"`
-	Status     string     `json:"status"`   // QUEUED,RUNNING,COMPLETED,FAILED,CANCELED
-	Progress   int        `json:"progress"` // 0‑100
+	Status     string     `json:"status"`   
+	Progress   int        `json:"progress"`
 	Processed  int64      `json:"processed"`
 	Total      int64      `json:"total"`
 	ResultPath string     `json:"result_path"`
@@ -27,7 +27,7 @@ type JobRepository interface {
 	MarkCancelled(ctx context.Context, id string) error
 	UpdateJob(ctx context.Context, job *JobRecord) error
 	UpdateTotal(ctx context.Context, jobID string, total int64) error
-	UpdateProgress(ctx context.Context,	jobID string, processed int, progress int) error
+	UpdateProgress(ctx context.Context, jobID string, processed int, progress int) error
 	IncrementProcessed(ctx context.Context, id string, inc int64, progress float64) error
 }
 
@@ -63,13 +63,16 @@ func (r *jobRepo) GetByID(ctx context.Context, id string) (*JobRecord, error) {
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&job).Error; err != nil {
 		return nil, err
 	}
+	if job.Status == "FINISHED" {
+		job.ResultPath = "/public/downloads/" + job.ID + ".csv"
+	}
 	return &job, nil
 }
 
 func (r *jobRepo) MarkCancelled(ctx context.Context, id string) error {
 	return r.db.WithContext(ctx).Model(&JobRecord{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"cancelled":  true,
-		"status":     "CANCELED", // ✅ Ini kunci
+		"status":     "CANCELED",
 		"updated_at": time.Now(),
 	}).Error
 }
@@ -90,7 +93,6 @@ func (r *jobRepo) UpdateJob(ctx context.Context, job *JobRecord) error {
 		}).Error
 }
 
-// UpdateTotal memperbaharui field Total pada JobRecord.
 func (r *jobRepo) UpdateTotal(ctx context.Context, jobID string, total int64) error {
 	return r.db.WithContext(ctx).
 		Model(&JobRecord{}).
@@ -98,7 +100,6 @@ func (r *jobRepo) UpdateTotal(ctx context.Context, jobID string, total int64) er
 		Update("total", total).Error
 }
 
-// UpdateProgress memperbaharui processed & progress (dan timestamp).
 func (r *jobRepo) UpdateProgress(
 	ctx context.Context,
 	jobID string,
@@ -120,8 +121,8 @@ func (r *jobRepo) IncrementProcessed(ctx context.Context, id string, inc int64, 
 		Model(&JobRecord{}).
 		Where("id = ?", id).
 		Updates(map[string]interface{}{
-			"processed": gorm.Expr("processed + ?", inc),
-			"progress":  progress,
+			"processed":  gorm.Expr("processed + ?", inc),
+			"progress":   progress,
 			"updated_at": time.Now(),
 		}).Error
 }

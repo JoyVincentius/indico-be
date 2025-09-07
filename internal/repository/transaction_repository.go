@@ -12,11 +12,9 @@ import (
 
 type Transaction struct {
 	models.Transaction
-	// embed for GORM table name handling
 }
 
 type TransactionRepository interface {
-	// Batch fetches rows ordered by ID (or any offset) – useful for pagination.
 	FetchBatch(ctx context.Context, offset, limit int) ([]models.Transaction, error)
 	CountAll(ctx context.Context) (int64, error)
 	CountByPeriod(ctx context.Context, from, to time.Time) (int64, error)
@@ -31,7 +29,6 @@ func NewTransactionRepo(db *gorm.DB) TransactionRepository {
 	return &transactionRepo{db: db}
 }
 
-// Fetch a slice of transactions – deterministic ordering by ID.
 func (r *transactionRepo) FetchBatch(ctx context.Context, offset, limit int) ([]models.Transaction, error) {
 	var txs []models.Transaction
 	err := r.db.WithContext(ctx).
@@ -51,7 +48,6 @@ func (r *transactionRepo) CountAll(ctx context.Context) (int64, error) {
 func (r *transactionRepo) CountByPeriod(ctx context.Context, from, to time.Time) (int64, error) {
 	var count int64
 
-	// Gunakan Query builder untuk mendapatkan jumlah transaksi dalam rentang
 	err := r.db.WithContext(ctx).
 		Model(&Transaction{}).
 		Where("paid_at >= ? AND paid_at <= ?", from, to).

@@ -7,6 +7,6 @@ type Transaction struct {
 	MerchantID  uint64    `json:"merchant_id"`
 	AmountCents int64     `json:"amount_cents"`
 	FeeCents    int64     `json:"fee_cents"`
-	Status      string    `json:"status"` // e.g. "paid"
+	Status      string    `json:"status"`
 	PaidAt      time.Time `json:"paid_at"`
 }

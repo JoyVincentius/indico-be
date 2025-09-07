@@ -10,11 +10,10 @@ import (
 )
 
 type settlementReq struct {
-	From string `json:"from" binding:"required"` // "2025-01-01"
+	From string `json:"from" binding:"required"` 
 	To   string `json:"to" binding:"required"`
 }
 
-// RegisterJobRoutes sets up /jobs endpoints.
 func RegisterJobRoutes(r *gin.Engine, q *job.JobQueue, repo repository.JobRepository) {
 	jobs := r.Group("/jobs")
 	{
@@ -33,14 +32,12 @@ func submitJob(q *job.JobQueue) gin.HandlerFunc {
 			return
 		}
 
-		// ✅ Asumsi: Enqueue hanya mengirim tanggal, bukan objek job
 		jobID, err := q.Enqueue(req.From, req.To)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		// ✅ Tidak ada CreateJob di handler!
 		c.JSON(http.StatusAccepted, gin.H{
 			"job_id": jobID,
 			"status": "QUEUED",
@@ -71,7 +68,6 @@ func cancelJob(q *job.JobQueue) gin.HandlerFunc {
 	}
 }
 
-// Simple static file serving for generated CSVs.
 func serveCSV() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		filename := c.Param("filename")

@@ -17,9 +17,18 @@ Service kecil yang menyediakan:
 ```bash
 # 1. Build & jalankan DB
 docker compose up --build
+```
+- **Eksekusi script sql yang ada di migrations/01_init.sql untuk membuat database dan tabel.**
 
+``` bash
 # 2. Seed data (produk & transaksi)
 go run scripts/seed_data.go
 
 # 3. Jalankan API
 go run main.go
+```
+
+### Disclaimer
+- **Script DB dan table tidak dijalankan saat eksekusi docker-compose.**
+- **Import postman collection untuk melakukan request API.**
+- **Jumlah worker bisa diatur di .env**
